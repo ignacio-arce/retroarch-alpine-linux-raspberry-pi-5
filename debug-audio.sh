@@ -51,6 +51,19 @@ if [ -S "$RT/pipewire-0" ]; then
         echo "wpctl no instalado (falta wireplumber)"
     fi
     echo
+    echo "-- Versiones de la pila --"
+    for p in pipewire pipewire-alsa pipewire-pulse wireplumber; do
+        printf '  %s: %s\n' "$p" "$(apk info -v "$p" 2>/dev/null || echo 'NO INSTALADO')"
+    done
+    echo
+    echo "-- Perfiles de las tarjetas (clave: 'Active Profile' y 'available: yes/no') --"
+    if command -v pactl >/dev/null 2>&1; then
+        pactl list cards 2>/dev/null | grep -E 'Card #|Name: |Profiles:|Ports:|priority|Active Profile|hdmi-output' || \
+            echo "(pactl no pudo listar tarjetas)"
+    else
+        echo "pactl no instalado (opcional: apk add pulseaudio-utils)"
+    fi
+    echo
     echo "-- Cliente PulseAudio (donde RetroArch 'pulse' se conecta) --"
     if command -v pactl >/dev/null 2>&1; then
         pactl info 2>&1 | head -8
@@ -83,6 +96,10 @@ elif ! [ -S "$RT/pipewire-0" ]; then
     echo "PipeWire no corre en la sesión: vuelve a lanzar start.sh y mira sus errores."
 elif ! command -v wpctl >/dev/null 2>&1 || [ -z "$(wpctl status 2>/dev/null | grep -i sink)" ]; then
     echo "Sin sinks: wireplumber no gestionó la tarjeta (grupos/permisos o carrera de arranque)."
+elif command -v pactl >/dev/null 2>&1 && pactl list cards 2>/dev/null | grep -q 'Active Profile: off'; then
+    echo "Perfil de tarjeta 'off': fuerza el HDMI con 'pactl set-card-profile 0 output:hdmi-stereo' (y 1 para la otra tarjeta)."
+elif command -v pactl >/dev/null 2>&1 && pactl list cards 2>/dev/null | grep -q 'available: no'; then
+    echo "Perfil HDMI 'available: no': la EDID/ELD del monitor no reporta audio. Prueba el otro puerto HDMI o fuerza el perfil a mano."
 else
     echo "La base parece OK: mira 'muted' y el volumen del sink, y el driver de RetroArch."
 fi
