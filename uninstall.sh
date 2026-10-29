@@ -26,13 +26,19 @@ if [ -f "$PROFILE" ]; then
     chown $TARGET_USER:$TARGET_USER "$PROFILE"
 fi
 
-# 5. Eliminar dependencias agrupadas bajo el paquete virtual
+# 5. Deshabilitar el repo testing de edge que añadió install.sh (cores libretro)
+sed -i '/edge\/testing/d' /etc/apk/repositories
+
+# 6. Eliminar dependencias agrupadas bajo el paquete virtual
 apk del retro-kiosk-deps
 
-# 6. Eliminar el stack de audio por si se instaló fuera del grupo virtual
+# 7. Eliminar los cores de emulación (grupo virtual retro-cores)
+apk del retro-cores
+
+# 8. Eliminar el stack de audio por si se instaló fuera del grupo virtual
 apk del pipewire pipewire-alsa pipewire-pulse wireplumber
 
-# 7. Quitar el usuario estándar de los grupos de hardware
+# 9. Quitar el usuario estándar de los grupos de hardware
 # NOTA: Debe coincidir con TARGET_USER de install.sh
 delgroup $TARGET_USER video
 delgroup $TARGET_USER input
