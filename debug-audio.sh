@@ -10,6 +10,10 @@ echo
 
 echo "== 2. Dispositivos de sonido del kernel =="
 ls -l /dev/snd/ 2>/dev/null || echo "/dev/snd NO EXISTE (el kernel no cargó audio HDMI)"
+echo "-- Conectores DRM (el puerto con el monitor debe decir 'connected') --"
+for f in /sys/class/drm/card*/status; do
+    [ -f "$f" ] && printf '  %s = %s\n' "${f%/status}" "$(cat "$f")"
+done
 echo
 
 echo "== 3. Tarjetas ALSA =="
@@ -53,7 +57,7 @@ if [ -S "$RT/pipewire-0" ]; then
     echo
     echo "-- Versiones de la pila --"
     for p in pipewire pipewire-alsa pipewire-pulse wireplumber; do
-        printf '  %s: %s\n' "$p" "$(apk info -v "$p" 2>/dev/null || echo 'NO INSTALADO')"
+        printf '  %s: %s\n' "$p" "$(apk info -e "$p" 2>/dev/null || echo 'NO INSTALADO')"
     done
     echo
     echo "-- Perfiles de las tarjetas (clave: 'Active Profile' y 'available: yes/no') --"
@@ -97,7 +101,9 @@ elif ! [ -S "$RT/pipewire-0" ]; then
 elif ! command -v wpctl >/dev/null 2>&1 || [ -z "$(wpctl status 2>/dev/null | grep -i sink)" ]; then
     echo "Sin sinks: wireplumber no gestionó la tarjeta (grupos/permisos o carrera de arranque)."
 elif command -v pactl >/dev/null 2>&1 && pactl list cards 2>/dev/null | grep -q 'Active Profile: off'; then
-    echo "Perfil de tarjeta 'off': fuerza el HDMI con 'pactl set-card-profile 0 output:hdmi-stereo' (y 1 para la otra tarjeta)."
+    echo "Perfil de tarjeta 'off' y sin perfil HDMI: ACP no detectó la ELD/EDID del monitor."
+    echo "  Prueba: pactl set-card-profile <indice> pro-audio   (luego wpctl status)."
+    echo "  Y por hardware: speaker-test -D hw:0,0 -c 2 -t sine -f 440 -l 1"
 elif command -v pactl >/dev/null 2>&1 && pactl list cards 2>/dev/null | grep -q 'available: no'; then
     echo "Perfil HDMI 'available: no': la EDID/ELD del monitor no reporta audio. Prueba el otro puerto HDMI o fuerza el perfil a mano."
 else
