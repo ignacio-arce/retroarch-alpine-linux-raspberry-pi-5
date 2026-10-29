@@ -72,4 +72,21 @@ EOF
 fi
 chown $TARGET_USER:$TARGET_USER "$PROFILE"
 
+# 9. Audio de RetroArch: usar la API PulseAudio (pipewire-pulse) en vez de ALSA,
+#    para no disputarse el dispositivo PCM con wireplumber, y forzar sin mute y volumen al máximo.
+#    Si el cfg no existe se crea con estas claves; RetroArch completa el resto al arrancar.
+RA_CFG="/home/$TARGET_USER/.config/retroarch/retroarch.cfg"
+mkdir -p "$(dirname "$RA_CFG")"
+set_ra() {
+    if grep -q "^[# ]*$1 =" "$RA_CFG" 2>/dev/null; then
+        sed -i "s|^[# ]*$1 =.*|$1 = \"$2\"|" "$RA_CFG"
+    else
+        echo "$1 = \"$2\"" >> "$RA_CFG"
+    fi
+}
+set_ra audio_driver "pulse"
+set_ra audio_volume "0.000000"
+set_ra audio_mute_enable "false"
+chown -R $TARGET_USER:$TARGET_USER "/home/$TARGET_USER/.config"
+
 echo "Instalación completada. REINICIA el equipo para aplicar el autologin (agetty) y los cambios de grupos."
