@@ -6,13 +6,13 @@ TARGET_USER="admin"
 
 # 1. Detener servicios de hardware e input
 rc-service seatd stop
-rc-service udev-trigger stop
-rc-service udev stop
+#rc-service udev-trigger stop
+#rc-service udev stop
 
 # 2. Deshabilitar los servicios en OpenRC (arranque automático)
 rc-update del seatd default
-rc-update del udev-trigger sysinit
-rc-update del udev sysinit
+#rc-update del udev-trigger sysinit
+#rc-update del udev sysinit
 
 # 3. Deshacer el autologin en tty1 y restaurar el getty por defecto de busybox.
 # Ojo: esto debe ir ANTES de borrar agetty, o tty1 se quedaría sin getty.
